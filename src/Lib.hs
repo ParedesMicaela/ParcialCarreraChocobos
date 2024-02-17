@@ -1,14 +1,14 @@
 data Chocobo = Chocobo {
-    pistas :: [Tramo],
     color :: Color
     fuerza :: Int,
     peso :: Int,
     velocidad :: Int
-}
+} deriving (show)
 
 --             nombre chocoboAsociado
 type Jinete = (String , Chocobo)
 type Jinetes = [Jinete]
+type Pista = [Tramo]
 
 --          distancia funcionRelacionadaChocobo
 type Tramo = (Int , CorreccionVelocidad)
@@ -37,14 +37,14 @@ distancia unTramo = fst unTramo
 velocidadCorregida :: Chocobo -> Tramo -> Float
 velocidadCorregida unChocobo unTramo = velocidad . snd unTramo $ unChocobo
 
-tiempoTotalPistasChocobo :: Chocobo -> Float
-tiempoTotalPistasChocobo unChocobo = foldl1 ((+) . flip (tiempoTardaRecorrer unChocobo)) . pistas unChocobo
+tiempoTotal :: Pista -> Chocobo -> Float
+tiempoTotal unChocobo unaPista = foldl1 ((+) . flip (tiempoTardaRecorrer unChocobo)) unaPista
 
-obtenerPodio :: Jinetes -> Tramo -> (Jinete, Jinete, Jinete)
-obtenerPodio unosJinetesCompetidores unTramo = take 3 . quicksort (<) . map (tiempoTardaRecorrer unTramo) unosJinetesCompetidores
+obtenerPodio :: Jinetes -> Pista -> (Jinete, Jinete, Jinete)
+obtenerPodio unosJinetesCompetidores unaPista = take 3 . quicksort (<) . map (tiempoJinete unaPista) unosJinetesCompetidores
 
-tiempoJinete :: Jinete -> Tramo -> Float
-tiempoJinete unJinete unTramo = tiempoTardaRecorrer unTramo . chocoboDelJinete unJinete 
+tiempoJinete :: Pista -> Jinete -> Float
+tiempoJinete unaPista = tiempoTotal unaPista . chocoboDelJinete  
 
 elMejorDelTramo :: Tramo -> Jinetes -> String
 elMejorDelTramo unTramo unaListaJinetes = nombreJinete . foldl1 (quienRecorrioMenorTiempo unTramo) unaListaJinetes
@@ -61,8 +61,21 @@ nombreJinete :: Jinete -> String
 nombreJinete unJinete = fst unJinete
 
 -- si lo recorrio en el menor tiempo es que lo gano
-tramosGanados :: Jinete -> Int
-tramosGanados unJinete = elMejorDelTramo   length . filter (== unJinete) 
+tramosGanados :: Tramo -> Jinete -> Int
+tramosGanados unTramo unJinete
+    |elMejorDelTramo unTramo length . filter (== unJinete) = 
 
-elMasWinner :: Tramo -> Jinetes -> String
-elMasWinner unTramo unaListaJinetes = 
+elMasWinner :: Pista -> Jinetes -> String
+elMasWinner unTramo unaListaJinetes =  elMejorDelTramo unTramo unaListaJinetes
+
+quinesPueden :: Int -> Tramo -> Jinetes -> Jinetes
+quienesPuede unTiempoMaximo unTramo unaListaJinetes = filter ((< unTiempoMaximo) . tiempoJinete unTramo) unaListaJinetes
+
+estadisticas :: Tramo -> Jinetes -> [(String, Int, Float)]
+estadisticas unTramo unaListaJinetes = map (estadisticaParaUnJinete unTramo) unaListaJinetes
+
+estadisticasParaUnJinete :: Tramo -> Jinete -> (String, Int, Float)
+estadisticasParaUnJinete unTramo unJinete = (nombreJinete unJinete, tramosGanados unTramo unJinete, tiempoJinete unTramo unJinete)
+
+fuePareja :: Tramo -> [Chocobo] -> Bool
+fuePareja unTramo unosChocobosParticipantes = 
