@@ -22,10 +22,10 @@ f2 chocobo = velocidad chocobo + fuerza chocobo
 f3 chocobo = velocidad chocobo / peso chocobo
 quicksort criterio lista
 
-mayorSegun :: (Ord a => Jinete -> a) -> Valor1 -> Valor2 -> Bool
+mayorSegun :: (Ord a => b -> a) -> b -> b -> Bool
 mayorSegun unaFuncion unValor otroValor = unaFuncion $ unValor > unaFuncion $ otroValor
 
-menorSegun :: (a -> a) -> Valor1 -> Valor2 -> Bool
+menorSegun :: (Ord a => b -> a) -> b -> b -> Bool
 menorSegun = not mayorSegun
 
 tiempoTardaRecorrer :: Tramo -> Chocobo -> Float
@@ -41,17 +41,20 @@ tiempoTotal :: Pista -> Chocobo -> Float
 tiempoTotal unChocobo unaPista = foldl1 ((+) . flip (tiempoTardaRecorrer unChocobo)) unaPista
 
 obtenerPodio :: Jinetes -> Pista -> (Jinete, Jinete, Jinete)
-obtenerPodio unosJinetesCompetidores unaPista = take 3 . quicksort (<) . map (tiempoJinete unaPista) unosJinetesCompetidores
+obtenerPodio unosJinetesCompetidores unaPista = take 3 . quicksort (<) . map (tiempoCarreraJinete unaPista) unosJinetesCompetidores
 
-tiempoJinete :: Pista -> Jinete -> Float
-tiempoJinete unaPista = tiempoTotal unaPista . chocoboDelJinete  
+tiempoCarreraJinete :: Pista -> Jinete -> Float
+tiempoCarreraJinete unaPista = tiempoTotal unaPista . chocoboDelJinete  
+
+tiempoTramoJinete :: Tramo -> Jinete -> Float
+tiempoTramoJinete unTramo = tiempoTardaRecorrer unTramo . chocoboDelJinete  
 
 elMejorDelTramo :: Tramo -> Jinetes -> String
 elMejorDelTramo unTramo unaListaJinetes = nombreJinete . foldl1 (quienRecorrioMenorTiempo unTramo) unaListaJinetes
 
 quienRecorrioEnMenorTiempo :: Tramo -> Jinete -> Jinete -> Jinete
 quienRecorrioEnMenorTiempo unTramo unJinete otroJinete 
-    |tiempoJinete unJinete < tiempoJinete otroJinete = unJinete
+    |tiempoTramoJinete unTramo unJinete < tiempoTramoJinete unTramo otroJinete = unJinete
     |otherwise = otroJinete
 
 chocoboDelJinete :: Jinete -> Chocobo
@@ -66,16 +69,16 @@ tramosGanados unTramo unJinete
     |elMejorDelTramo unTramo length . filter (== unJinete) = 
 
 elMasWinner :: Pista -> Jinetes -> String
-elMasWinner unTramo unaListaJinetes =  elMejorDelTramo unTramo unaListaJinetes
+elMasWinner unaPista unaListaJinetes =  elMejorDelTramo unTramo unaListaJinetes
 
 quinesPueden :: Int -> Tramo -> Jinetes -> Jinetes
-quienesPuede unTiempoMaximo unTramo unaListaJinetes = filter ((< unTiempoMaximo) . tiempoJinete unTramo) unaListaJinetes
+quienesPuede unTiempoMaximo unTramo unaListaJinetes = filter ((< unTiempoMaximo) . tiempoTramoJinete unTramo) unaListaJinetes
 
 estadisticas :: Tramo -> Jinetes -> [(String, Int, Float)]
 estadisticas unTramo unaListaJinetes = map (estadisticaParaUnJinete unTramo) unaListaJinetes
 
 estadisticasParaUnJinete :: Tramo -> Jinete -> (String, Int, Float)
-estadisticasParaUnJinete unTramo unJinete = (nombreJinete unJinete, tramosGanados unTramo unJinete, tiempoJinete unTramo unJinete)
+estadisticasParaUnJinete unTramo unJinete = (nombreJinete unJinete, tramosGanados unTramo unJinete, tiempoCarreraJinete unTramo unJinete)
 
 fuePareja :: Tramo -> [Chocobo] -> Bool
 fuePareja unTramo unosChocobosParticipantes = 
